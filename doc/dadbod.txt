@@ -117,9 +117,14 @@ DuckDB ~
     duckdb:relative/path
     duckdb:/absolute/path
     duckdb:C:/windows/path
+    duckdb:?init=/absolute/path/setup.sql
 <
-An empty path portion uses an in-memory database, which is occasionally useful
-for an interactive invocation.
+An empty path portion uses a temporary database file shared for the Vim session.
+The optional `init` query parameter names a readable SQL setup file, passed to
+DuckDB's `-init` option for each query, interactive invocation, and table listing.
+URL-encode special characters in the setup path, such as `%20` for spaces and
+`%26` for `&`. Keep credentials in the setup file rather than the URL, protect
+the file's permissions, and exclude it from version control.
 
                                                 *dadbod-impala*
 Impala ~

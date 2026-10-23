@@ -29,7 +29,22 @@ function! db#adapter#duckdb#dbext(url) abort
 endfunction
 
 function! db#adapter#duckdb#command(url) abort
-  return ['duckdb', s:path(a:url)]
+  if assert_equal(type(''), type(a:url))
+    throw 'DB: DuckDB URL must be a string'
+  endif
+  let command = ['duckdb', s:path(a:url)]
+  let params = db#url#parse(a:url).params
+  if has_key(params, 'init')
+    let init = params.init
+    if type(init) != type('') || empty(init) || init =~# "\f" || !filereadable(init)
+      throw 'DB: DuckDB init must name one readable file'
+    endif
+    let command += ['-init', init]
+  endif
+  if assert_false(empty(command[1]))
+    throw 'DB: DuckDB database path must not be empty'
+  endif
+  return command
 endfunction
 
 function! db#adapter#duckdb#interactive(url) abort
@@ -37,7 +52,10 @@ function! db#adapter#duckdb#interactive(url) abort
 endfunction
 
 function! db#adapter#duckdb#tables(url) abort
-  return split(join(db#systemlist(db#adapter#duckdb#command(a:url) + ['-noheader', '.tables'])))
+  let lines = db#systemlist(db#adapter#duckdb#command(a:url) + ['-noheader', '.tables'])
+  call map(lines, 'substitute(v:val, ''\e\[[0-9;]*m'', "", "g")')
+  call filter(lines, 'v:val !~# "^-- Loading resources from "')
+  return split(join(lines))
 endfunction
 
 function! db#adapter#duckdb#massage(input) abort
